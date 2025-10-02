@@ -2,6 +2,8 @@ library(motus)
 library(tidyverse)
 library(DBI)
 library(RSQLite)
+library(sf)
+library(rnaturalearth)
 
 ### Set Environment and Working Directory ###
 
@@ -69,9 +71,155 @@ alltags_unfiltered <- alltags %>%
   filter(tagDepComments %ni% "TEST TAG ACTIVATED 9/7, GIVEN TO MIKE AVARA 9/14") #if your dataset includes test tags, filter it out
 
 ### Filtering the Data ###
+#filter the data to only include data where the motusFilter equals 1
+alltags_motus_filter <- alltags_unfiltered %>% 
+  filter(motusFilter == 1)
+
+#All of the data with a motusFilter of 0
+df_block_0 <- tbl(sql_motus, "alltags") %>%
+  filter(motusFilter == 0) %>%
+  collect()
+
+## Preliminary Data Checks ##
+#Check receivers
+alltags_motus_filter %>%
+  filter(is.na(recvDeployLat) | is.na(recvDeployName))
+  select(recvDeployLat, recvDeployLon, recvDeployName, recvDeployID, recv, 
+         recvProjID, recvProjName)
+
+#remove all rows where the receiver info is missing
+alltags_na_receivers <- alltags_motus_filter %>%
+  drop_na(recvDeployLat | recvDeployName)
+
+## Summarizing tag Detections ##
+df_summary <- alltags_na_receivers %>%
+  filter(tagProjID == 314) %>%
+  group_by(motusTagID, runID, recvDeployName, ambigID, 
+           tagDepLon, tagDepLat, recvDeployLat, recvDeployLon, tagDeployID) %>%
+  #summarizing by runID to get max run length and mean time stamp:
+  summarize(max.runLen = max(runLen, na.rm = TRUE), 
+            ts = mean(ts, na.rm = TRUE), .groups = "drop") %>% 
+  arrange(motusTagID, ts) %>%
+  mutate(time = as_datetime(ts))
+
+df_summary %>% 
+  slice_sample(n = 10) %>% 
+  select(tagDeployID) %>% 
+  distinct()
+
+ggplot(data = filter(df_summary,
+                     tagDeployID %in% c(45803, 38035, 45847, 28490, 38031, 28491)), 
+       aes(x = time, y = recvDeployLat)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_point() + 
+  geom_path() +
+  facet_wrap(~ tagDeployID, scales = "free", ncol = 2) +
+  scale_x_datetime(date_labels = "%Y-%m-%d")
+ 
+## Ambiguous Tags ##
+clarify(file.name)
+
+ambigTags <- alltags_motus_filter %>%
+  select(ambigID, motusTagID) %>%
+  filter(!is.na(ambigID)) %>%
+  distinct()
+
+df_summary.ambig <- filter(df_summary, motusTagID %in% ambigTags$motusTagID) %>% 
+  mutate(ambig = !is.na(ambigID)) # Ambiguous or not? TRUE/FALSE
+
+# to put all ambiguous tags from the same project on the same plot together, we
+# need to create a new 'ambig tag' variable we call 'newID' that includes the 
+# multiple 'motusTagIDs' for each 'ambigID'
+
+ambigTags2 <- alltags_motus_filter %>%
+  select(ambigID, motusTagID) %>%
+  filter(!is.na(ambigID)) %>%
+  distinct() %>%
+  group_by(ambigID) %>%
+  summarize(newID = paste(unique(ambigID), toString(motusTagID), sep = ": ")) %>%
+  left_join(ambigTags, by = "ambigID")
+
+# and merge that with 'df_summary'
+
+df_summary.ambig <- left_join(df_summary.ambig, ambigTags2, by = "motusTagID") %>% 
+  arrange(time)
+
+ggplot(data = df_summary.ambig, 
+       aes(x = time, y = recvDeployLat, colour = ambig)) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_point() + 
+  geom_path() + 
+  facet_wrap(~ newID, scales = "free", ncol = 2)
+
+
+### Making departure graphs for fall rails ###
+towers <- unique(alltags_na_receivers$recvDeployName)
+view(towers)
+departures <- alltags_motus_filter %>% 
+  filter(recvDeployName %in% c("Chad", "Chautauqua", "Swan Bay", "Pumphouse",
+                               "Dixon Waterfowl Refuge-North")) %>% 
+  mutate(tag_time = as_datetime(tagDeployStart)) %>% 
+  mutate(date = date(time))
+
+fall_departures <- departures %>% 
+  mutate(tag_time = as_datetime(tagDeployStart)) %>% 
+  mutate(date = date(time)) %>% 
+  filter(month(tag_time) == 8:11)
+
+departures %>% 
+  filter(motusTagID == 62571) %>% 
+  mutate(time_cst = with_tz(time, "US/Central")) %>% 
+  mutate(date_cst = date(time_cst)) %>% 
+  ggplot(aes(x = time_cst, y = sig, colour = as.factor(port))) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_point() + 
+  geom_smooth(method = "loess", se = FALSE) + 
+  facet_wrap(date_cst ~ recvDeployName, scales = "free_x")
+
+tag_65915 <- departures %>% 
+  filter(motusTagID == 65915) %>% 
+  mutate(time_cst = with_tz(time, "US/Central")) %>% 
+  mutate(date_cst = date(time_cst)) %>%
+  arrange(desc(time_cst))
 
 
 
+####### Make for-loop for spatial map
+###################
+###load in important objects for map visuals, should only need to do once if you use the same working directory
+world <- ne_countries(scale = "medium", returnclass = "sf") 
+lakes <- ne_download(scale = "medium", type = 'lakes', category = 'physical',
+                     returnclass = "sf")
+
+###code for adding state/country boundaries
+usmap <- ne_states(country = c("United States of America","Canada"), returnclass = 'sf')
+eastern <- filter(usmap, region %in% c("Midwest","South","Northeast"))
+
+xmin <- min(tag_65915$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(tag_65915$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(tag_65915$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(tag_65915$recvDeployLat, na.rm = TRUE) + 1
+
+ggplot(data = world) +
+  geom_sf(colour = NA) +
+  geom_sf(data = lakes, colour = NA, fill = "white") +
+  geom_sf(data = usmap, fill = "gray98") +
+  coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+  theme_bw() + 
+  labs(x = "", y = "") +
+  geom_path(data = tag_65915, 
+            aes(x = recvDeployLon, y = recvDeployLat, 
+                group = as.factor(mfgID), colour = as.factor(mfgID))) +
+  geom_point(data = tag_65915, aes(x = recvDeployLon, y = recvDeployLat), 
+             shape = 16, colour = "black") +
+  geom_point(data = tag_65915, 
+             aes(x = tagDepLon, y = tagDepLat), colour = "red", shape = 4) +
+  scale_colour_discrete("Motus Tag ID")
+
+ggsave(plot2, file=paste0("DubMap_", i,".png"), width = 14, height = 10, units = "cm")
 
 #######Export individual data and create new folders to store them in########
 setwd("R:/Rails_NEW") #if you want to export the data to somewhere other than your original directory (like the samba cluster) you can set that here
@@ -107,3 +255,28 @@ for (band in unique_bands) {
   write.csv(subset_data, file_path)
 }
 
+spring_departures <- alltags_motus_filter %>% 
+  mutate(tag_time = as_datetime(tagDeployStart)) %>% 
+  mutate(date = date(time)) %>% 
+  filter(month(tag_time) == 3:6)
+
+fall_departures <- alltags_motus_filter %>% 
+  mutate(tag_time = as_datetime(tagDeployStart)) %>% 
+  mutate(date = date(time)) %>% 
+  filter(month(tag_time) == 8:11)
+
+fall_departures %>% 
+  distinct(motusTagID) %>% 
+  count()
+
+spring_departures %>% 
+  distinct(motusTagID) %>% 
+  count()
+
+alltags_motus_filter %>% 
+  distinct(motusTagID) %>% 
+  count()
+
+departures %>% 
+  distinct(motusTagID) %>% 
+  count()
