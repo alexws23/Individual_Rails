@@ -37,9 +37,9 @@ tbl.tagprops <- tbl(sql_motus_rail, "tagDeps")
 
 df.tagprops <- tbl.tagprops %>% 
   collect() %>% 
-  as.data.frame() %>% 
-  rename(tagDeployID = deployID) %>% 
-  select(tagDeployID|tagID)
+  as.data.frame() #%>% 
+  #rename(tagDeployID = deployID) %>% 
+  #select(tagDeployID|tagID)
 
 names(df.alltags)     # field names
 str(df.alltags)       # structure of your data fields
