@@ -161,23 +161,52 @@ departures <- alltags_motus_filter %>%
   filter(recvDeployName %in% c("Chad", "Chautauqua", "Swan Bay", "Pumphouse",
                                "Dixon Waterfowl Refuge-North")) %>% 
   mutate(tag_time = as_datetime(tagDeployStart)) %>% 
-  mutate(date = date(time))
+  mutate(date = date(time)) %>% 
+  mutate(time_cst = with_tz(time, "US/Central")) %>% 
+  mutate(date_cst = date(time_cst))
 
 fall_departures <- departures %>% 
-  mutate(tag_time = as_datetime(tagDeployStart)) %>% 
-  mutate(date = date(time)) %>% 
-  filter(month(tag_time) == 8:11)
+  filter(month(tag_time) == 8:11) %>% 
+  filter(month(date_cst) == 8:11)
 
-departures %>% 
-  filter(motusTagID == 62571) %>% 
-  mutate(time_cst = with_tz(time, "US/Central")) %>% 
-  mutate(date_cst = date(time_cst)) %>% 
-  ggplot(aes(x = time_cst, y = sig, colour = as.factor(port))) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
-  geom_point() + 
-  geom_smooth(method = "loess", se = FALSE) + 
-  facet_wrap(date_cst ~ recvDeployName, scales = "free_x")
+setwd("C:/Users/awsmilor/Git/Ward Lab/Individual_Rails")
+
+unique_vals <- unique(fall_departures$tagDeployID)
+
+for (i in unique_vals) {
+  
+  # Filter data for this tag
+  df_sub <- fall_departures %>%
+    filter(tagDeployID == i)
+  
+  # Identify the 6 most recent dates
+  recent_dates <- df_sub %>%
+    distinct(date_cst) %>%
+    arrange(desc(date_cst)) %>%
+    slice(1:6) %>%
+    pull(date_cst)
+  
+  # Filter to only those dates
+  df_sub <- df_sub %>%
+    filter(date_cst %in% recent_dates)
+  
+  # Make the plot
+  departure_plot <- ggplot(data = df_sub,
+                           aes(x = time_cst, y = sig, colour = as.factor(port))) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+    geom_point() + 
+    geom_smooth(method = "loess", se = FALSE) + 
+    facet_wrap(date_cst ~ recvDeployName, scales = "free_x") +
+    labs(title = paste(i))
+  
+  # Save the plot
+  ggsave(departure_plot,
+         filename = paste0("dep_plots_fall/departure_", i, ".png"),
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs",
+         scale = 1,
+         create.dir = TRUE)
+}
 
 tag_65915 <- departures %>% 
   filter(motusTagID == 65915) %>% 
