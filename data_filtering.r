@@ -157,7 +157,7 @@ ggplot(data = df_summary.ambig,
 ### Making departure graphs for fall rails ###
 towers <- unique(alltags_na_receivers$recvDeployName)
 view(towers)
-departures <- alltags_motus_filter %>% 
+departures <- alltags_unfiltered %>% 
   filter(recvDeployName %in% c("Chad", "Chautauqua", "Swan Bay", "Pumphouse",
                                "Dixon Waterfowl Refuge-North")) %>% 
   mutate(tag_time = as_datetime(tagDeployStart)) %>% 
@@ -165,19 +165,20 @@ departures <- alltags_motus_filter %>%
   mutate(time_cst = with_tz(time, "US/Central")) %>% 
   mutate(date_cst = date(time_cst))
 
+### Creating departure plots for all birds tagged in the fall ###
 fall_departures <- departures %>% 
-  filter(month(tag_time) == 8:11) %>% 
-  filter(month(date_cst) == 8:11)
+  filter(month(tag_time) %in% 8:12) %>% 
+  filter(month(date_cst) %in% 8:12)
 
-setwd("C:/Users/awsmilor/Git/Ward Lab/Individual_Rails")
+setwd("C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Data")
 
-unique_vals <- unique(fall_departures$tagDeployID)
+unique_vals <- unique(fall_departures$motusTagID)
 
 for (i in unique_vals) {
   
   # Filter data for this tag
   df_sub <- fall_departures %>%
-    filter(tagDeployID == i)
+    filter(motusTagID == i)
   
   # Identify the 6 most recent dates
   recent_dates <- df_sub %>%
@@ -208,10 +209,128 @@ for (i in unique_vals) {
          create.dir = TRUE)
 }
 
-tag_65915 <- departures %>% 
-  filter(motusTagID == 65915) %>% 
+### Creating Departure Plots for all birds tagged in the spring ###
+spring_departures <- departures %>% 
+  filter(month(tag_time) %in% 3:6) %>% 
+  filter(month(date_cst) %in% 3:6)
+
+unique_vals2 <- unique(spring_departures$motusTagID)
+
+for (i in unique_vals2) {
+  
+  # Filter data for this tag
+  df_sub <- spring_departures %>%
+    filter(motusTagID == i)
+  
+  # Identify the 6 most recent dates
+  recent_dates <- df_sub %>%
+    distinct(date_cst) %>%
+    arrange(desc(date_cst)) %>%
+    slice(1:6) %>%
+    pull(date_cst)
+  
+  # Filter to only those dates
+  df_sub <- df_sub %>%
+    filter(date_cst %in% recent_dates)
+  
+  # Make the plot
+  departure_plot <- ggplot(data = df_sub,
+                           aes(x = time_cst, y = sig, colour = as.factor(port))) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+    geom_point() + 
+    geom_smooth(method = "loess", se = FALSE) + 
+    facet_wrap(date_cst ~ recvDeployName, scales = "free_x") +
+    labs(title = paste(i))
+  
+  # Save the plot
+  ggsave(departure_plot,
+         filename = paste0("dep_plots_spring/departure_", i, ".png"),
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs",
+         scale = 1,
+         create.dir = TRUE)
+}
+
+## Using filtered data
+departures_filtered <- alltags_motus_filter %>% 
+  filter(recvDeployName %in% c("Chad", "Chautauqua", "Swan Bay", "Pumphouse",
+                               "Dixon Waterfowl Refuge-North")) %>% 
+  mutate(tag_time = as_datetime(tagDeployStart)) %>% 
+  mutate(date = date(time)) %>% 
   mutate(time_cst = with_tz(time, "US/Central")) %>% 
-  mutate(date_cst = date(time_cst)) %>%
+  mutate(date_cst = date(time_cst))
+
+spring_departures_filtered <- departures_filtered %>% 
+  filter(month(tag_time) %in% 3:6) %>% 
+  filter(month(date_cst) %in% 3:6)
+
+unique_vals3 <- unique(spring_departures_filtered$motusTagID)
+
+for (i in unique_vals3) {
+  
+  # Filter data for this tag
+  df_sub <- spring_departures_filtered %>%
+    filter(motusTagID == i)
+  
+  # Identify the 6 most recent dates
+  recent_dates <- df_sub %>%
+    distinct(date_cst) %>%
+    arrange(desc(date_cst)) %>%
+    slice(1:6) %>%
+    pull(date_cst)
+  
+  # Filter to only those dates
+  df_sub <- df_sub %>%
+    filter(date_cst %in% recent_dates)
+  
+  # Make the plot
+  departure_plot <- ggplot(data = df_sub,
+                           aes(x = time_cst, y = sig, colour = as.factor(port))) +
+    theme_bw() +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+    geom_point() + 
+    geom_smooth(method = "loess", se = FALSE) + 
+    facet_wrap(date_cst ~ recvDeployName, scales = "free_x") +
+    labs(title = paste(i))
+  
+  # Save the plot
+  ggsave(departure_plot,
+         filename = paste0("dep_plots_spring_filtered/departure_", i, ".png"),
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs",
+         scale = 1,
+         create.dir = TRUE)
+}
+
+###### For-loop for departure CSVs
+######################
+setwd("C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Data")
+##Fall Departures
+for (i in unique_vals) {
+  
+  # Filter data for this tag
+  df_sub <- fall_departures %>%
+    filter(motusTagID == i)  
+  
+  # Save the plot
+  write.csv(df_sub,
+         file = paste0("dep_data_fall_unfiltered/departure_", i, ".csv"))
+}
+
+##Spring Departures
+for (i in unique_vals2) {
+  
+  # Filter data for this tag
+  df_sub <- spring_departures %>%
+    filter(motusTagID == i)  
+  
+  # Save the plot
+  write.csv(df_sub,
+            file = paste0("dep_data_spring_unfiltered/departure_", i, ".csv"))
+}
+
+
+tag_65919 <- departures %>% 
+  filter(motusTagID == 65919) %>% 
   arrange(desc(time_cst))
 
 
