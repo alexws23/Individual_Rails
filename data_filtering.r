@@ -333,9 +333,207 @@ tag_65919 <- departures %>%
   filter(motusTagID == 65919) %>% 
   arrange(desc(time_cst))
 
+############# for-loop for movement data
+alltags_ordered <- mutate(alltags_na_receivers, recvDeployName = reorder(recvDeployName,recvDeployLat))
+
+##set parameters for latitude > 0 to remove some false detections
+alltags_ordered <- subset(alltags_ordered, recvDeployLat>-5)
+alltags_ordered <- subset(alltags_ordered, recvDeployLon< -52)
+alltags_cleaned <- subset(alltags_ordered, recvDeployLon> -140)
 
 
-####### Make for-loop for spatial map
+alltags_corrected <- alltags_cleaned %>% 
+  mutate(tag_time = as_datetime(tagDeployStart)) %>% 
+  mutate(date = date(time)) %>% 
+  mutate(time_cst = with_tz(time, "US/Central")) %>% 
+  mutate(date_cst = date(time_cst))
+
+### For Spring 2021
+spring_2021 <- alltags_corrected %>% 
+  filter(year(tag_time) == 2021) %>% 
+  filter(month(tag_time) %in% 3:6)
+
+unique_vals4 = unique(spring_2021$motusTagID)
+
+#For-loop to create plots
+for(i in unique_vals4){
+  #Object for species name
+  species <- spring_2021 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  #Create plot
+  plot <- ggplot(data = filter(spring_2021, 
+                               motusTagID == i), 
+                 aes(x = time_cst, y = recvDeployName)) +
+    theme_bw() + 
+    geom_point() + 
+    labs(x = "Time of year", y = "Receiver name (ordered by latitude)", subtitle = species)
+  
+  ggsave(plot, file=paste0("Spring_2021/Motus_filter_plot_", i,".png"), width = 14, height = 10, units = "cm",
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+}
+
+#For Fall 2021
+fall_2021 <- alltags_corrected %>% 
+  filter(year(tag_time) == 2021) %>% 
+  filter(month(tag_time) %in% 8:11)
+
+unique_vals5 = unique(fall_2021$motusTagID)
+
+#For-loop to create plots
+for(i in unique_vals5){
+  #Object for species name
+  species <- fall_2021 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  #Create plot
+  plot <- ggplot(data = filter(fall_2021, 
+                               motusTagID == i), 
+                 aes(x = time_cst, y = recvDeployName)) +
+    theme_bw() + 
+    geom_point() + 
+    labs(x = "Time of year", y = "Receiver name (ordered by latitude)", subtitle = species)
+  
+  ggsave(plot, file=paste0("Fall_2021/Motus_filter_plot_", i, ".png"), width = 14, height = 10, units = "cm",
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+}
+
+#For Spring 2022
+spring_2022 <- alltags_corrected %>% 
+  filter(year(tag_time) == 2022) %>% 
+  filter(month(tag_time) %in% 3:6)
+
+unique_vals8 = unique(spring_2022$motusTagID)
+
+#For-loop to create plots
+for(i in unique_vals8){
+  #Object for species name
+  species <- spring_2022 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  #Create plot
+  plot <- ggplot(data = filter(spring_2022, 
+                               motusTagID == i), 
+                 aes(x = time_cst, y = recvDeployName)) +
+    theme_bw() + 
+    geom_point() + 
+    labs(x = "Time of year", y = "Receiver name (ordered by latitude)", subtitle = species)
+  
+  ggsave(plot, file=paste0("Spring_2022/Motus_filter_plot_", i, ".png"), width = 14, height = 10, units = "cm",
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+}
+
+#For Fall 2022
+fall_2022 <- alltags_corrected %>% 
+  filter(year(tag_time) == 2022) %>% 
+  filter(month(tag_time) %in% 8:11)
+
+unique_vals10 = unique(fall_2022$motusTagID)
+
+#For-loop to create plots
+for(i in unique_vals10){
+  #Object for species name
+  species <- fall_2022 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  #Create plot
+  plot <- ggplot(data = filter(fall_2022, 
+                               motusTagID == i), 
+                 aes(x = time_cst, y = recvDeployName)) +
+    theme_bw() + 
+    geom_point() + 
+    labs(x = "Time of year", y = "Receiver name (ordered by latitude)", subtitle = species)
+  
+  ggsave(plot, file=paste0("Fall_2022/Motus_filter_plot_", i, ".png"), width = 14, height = 10, units = "cm",
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+}
+
+#For Spring 2023
+spring_2023 <- alltags_corrected %>% 
+  filter(year(tag_time) == 2023) %>% 
+  filter(month(tag_time) %in% 3:6)
+
+unique_vals12 = unique(spring_2023$motusTagID)
+
+#For-loop to create plots
+for(i in unique_vals12){
+  #Object for species name
+  species <- spring_2023 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  #Create plot
+  plot <- ggplot(data = filter(spring_2023, 
+                               motusTagID == i), 
+                 aes(x = time_cst, y = recvDeployName)) +
+    theme_bw() + 
+    geom_point() + 
+    labs(x = "Time of year", y = "Receiver name (ordered by latitude)", subtitle = species)
+  
+  ggsave(plot, file=paste0("Spring_2023/Motus_filter_plot_", i, ".png"), width = 14, height = 10, units = "cm",
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+}
+###### Towers of Concern #####
+bad_towers <- c("Missisquoi Bay NWR", #tower in Vermont
+                #lots of towers up in the Nova Scotia area picked up our tags. Seems highly unlikely.
+                "Kent Island", "Allison (Johnston Point II)", "Johnstons Point", "Borden-Carleton",
+                "Selma2", "East Walton", "Cape Jourimain", "Brule Point", "Big Island", "Baie Verte2", 
+                "Beaubassin", "Lookoff", "Blandford", "Tantramar School", "Hopewell2", "Sonora", 
+                "Bois de la Roche 2", "Linden2", "West Quoddy", "Taylor Head", "Kingsburg", "GMNP-Berry Hill",
+                "Kejimkujik National Park", "Bois de la Roche 2", "Goose Bay", "Pugwash", "Grande-Ile",
+                "Bridgewater2", "Waterside", "Chebogue Point", "Cabot Beach Provincial Park", "Shag Harbor","Truro",
+                "Grève de Tadoussac",
+                "WELL", #tower in MA
+                "MASH", #tower in the Hamptons
+                "Golfo de Santa Clara - RV Park", #Tower on the coast of the Gulf of California
+                "Ensenada - Estero Beach Hotel", #Tower on the pacific coast of Baja
+                "Stump Lake", #Tower in BC
+                #Whole bunch of towers in Jamaica got a couple of our birds. Some plausible, but feels unlikely
+                "IRI Departure", "LII K.5-7.5", "LII K-8", "LII J.5-7.5", "LII J.5-8.5",
+                "LII J-8", "LII I.5-7.5", "MM Departure", "MM B.5-2.5", "LII I-8",
+                "MM B.5-3.5", "MM A.5-3.5", "LII H.5-7.5", "MM A.5-4.5", "Test-14DD",
+                "LII I.5-8.5", "MM B.5-4.5",
+                "Finca Cristina", #Tower in Panama
+                "Finca El Triunfo", #Tower in Colombia
+                #Whole Bunch of towers in New Hampshire
+                "Weir6", "Gauge House", "Weather Station", "Mid Plot", "West End", "High Plot", "Kineo",
+                "AVNJ", #Tower in NJ
+                "GA_OSS_DOCK", "Harris Neck NWR, GA", #Towers in GA
+                "Parramore Island", #Tower in MD
+                "Alaksen", "Scout Island Nature Centre", #Tower in BC
+                "JBNY", #Tower in NY
+                "ASRI_Bristol", #Tower in MA
+                "Maywood Environmental Park" #Tower in WI
+                )
+
+###### NEED TO REVIEW 73234!!!! ###########
+###### SORA 73270 SHOWS ELLIPTICAL MIGRATION IN FALL. Goes from ND to atlantic coast. Seems legit
+###### SORA 77501 SHOWS THE SAME THING!! ARE EASTERN DETECTIONS LEGIT?? ######
+
+#Maybe "Kent Farm Research Station" #Tower in Indiana
+#Maybe "McGill_Bird_Observatory", "Beloeil", "Senneville Farm" #Towers in Montreal
+#Maybe "Scotch_Bush" #Tower near Ottowa
+#Maybe "Monocliff", "Walsingham Super Tower", "Glen Rouge Camprgound Parking Lot Loop" #Tower near Toronto
+#Maybe Montna Farms #Tower in Central California
+#Maybe "SAVA03" #Tower near the Chesapeake bay
+#Maybe "Sessions Woods" #Tower in Connecticut
+#Maybe "Reserva de la Biosfera Ria Celestun, CONANP field" #Tower in Yucatan
+#Maybe "Birds Canada HQ" #In Ontario
+#Maybe "FortWhyte Alive" #Tower near Winnipeg
+#Maybe "Triton2" #Tower in Quebec
+#Maybe "Sunset Bench-MT", "North Floodplain-MT", #Towers in western Montana
+#Maybe  "High Knob Fire Tower", "Summit Fire Tower", "PARC Banding", "Yeany's Maple", "PARC Binkey", "Binkey", "PARC Honey Hut", "Lambs Gap Tower" #Towers in Pennsylvania
+#Maybe "Newtowne Neck State Park, Compton, MD", "CHIN", "Patuxent River Park", "Bluestem Farm",
+#"Nassawango Fire Tower", "Lamb's Knoll" #Towers in MD
+#Maybe "␀CHDE" #Tower in Delaware
+#Maybe "Cape Romain NWR, SC (Bulls Island)", "North Intet - Winyah Bay NERR", "Fort Moultrie" #Towers in SC
+#Maybe "Shelburne Farms"
+
+####### Make for-loop for spatial map for spring 2021
 ###################
 ###load in important objects for map visuals, should only need to do once if you use the same working directory
 world <- ne_countries(scale = "medium", returnclass = "sf") 
@@ -344,30 +542,409 @@ lakes <- ne_download(scale = "medium", type = 'lakes', category = 'physical',
 
 ###code for adding state/country boundaries
 usmap <- ne_states(country = c("United States of America","Canada"), returnclass = 'sf')
-eastern <- filter(usmap, region %in% c("Midwest","South","Northeast"))
+eastern <- filter(usmap, region %in% c("Midwest","South","Northeast")) 
 
-xmin <- min(tag_65915$recvDeployLon, na.rm = TRUE) - 2
-xmax <- max(tag_65915$recvDeployLon, na.rm = TRUE) + 2
-ymin <- min(tag_65915$recvDeployLat, na.rm = TRUE) - 1
-ymax <- max(tag_65915$recvDeployLat, na.rm = TRUE) + 1
+###determine what values you want to be pulled out for each run of the for-loop
+unique_vals6 = unique(spring_2021$motusTagID)
 
-ggplot(data = world) +
-  geom_sf(colour = NA) +
-  geom_sf(data = lakes, colour = NA, fill = "white") +
-  geom_sf(data = usmap, fill = "gray98") +
-  coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
-  theme_bw() + 
-  labs(x = "", y = "") +
-  geom_path(data = tag_65915, 
-            aes(x = recvDeployLon, y = recvDeployLat, 
-                group = as.factor(mfgID), colour = as.factor(mfgID))) +
-  geom_point(data = tag_65915, aes(x = recvDeployLon, y = recvDeployLat), 
-             shape = 16, colour = "black") +
-  geom_point(data = tag_65915, 
-             aes(x = tagDepLon, y = tagDepLat), colour = "red", shape = 4) +
-  scale_colour_discrete("Motus Tag ID")
+# set limits to map based on locations of detections, ensuring they include the
+# deployment locations
 
-ggsave(plot2, file=paste0("DubMap_", i,".png"), width = 14, height = 10, units = "cm")
+xmin <- min(spring_2021$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(spring_2021$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(spring_2021$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(spring_2021$recvDeployLat, na.rm = TRUE) + 1
+
+###for rails with filtered detections
+for(i in unique_vals6){
+  df_tmp <- spring_2021 %>%
+    filter(motusTagID %in% c(i)) %>%
+    arrange(time_cst)  %>%
+    as.data.frame()
+  
+  # Build segment data
+  df_segments <- df_tmp %>%
+    mutate(
+      x_start = recvDeployLon,
+      y_start = recvDeployLat,
+      x_end   = lead(recvDeployLon),
+      y_end   = lead(recvDeployLat),
+      Year    = as.factor(year(time_cst))
+    ) %>%
+    filter(!is.na(x_end), !is.na(y_end))
+  
+  #Object for species name
+  species <- spring_2021 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  
+  #Create Plot
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      colour = "Year"
+    ) +
+    geom_segment(
+      data = df_segments,
+      aes(x = x_start, y = y_start,
+          xend = x_end, yend = y_end,
+          colour = Year,
+          group = motusTagID),
+      arrow = arrow(type = "open", length = unit(0.25, "cm"))
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat),
+      shape = 16,
+      colour = "black"
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4
+    ) +
+    scale_colour_discrete()
+  
+    ggsave(plot2, file=paste0("Spring_2021_Filtered_Maps/FilterMap_", i,".png"), 
+           width = 14, height = 10, units = "cm", 
+           create.dir = TRUE,
+           path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+    
+}
+
+####### Make for-loop for spatial map for Fall 2021
+###################
+###load in important objects for map visuals, should only need to do once if you use the same working directory
+world <- ne_countries(scale = "medium", returnclass = "sf") 
+lakes <- ne_download(scale = "medium", type = 'lakes', category = 'physical',
+                     returnclass = "sf")
+
+###code for adding state/country boundaries
+usmap <- ne_states(country = c("United States of America","Canada"), returnclass = 'sf')
+eastern <- filter(usmap, region %in% c("Midwest","South","Northeast")) 
+
+###determine what values you want to be pulled out for each run of the for-loop
+unique_vals7 = unique(fall_2021$motusTagID)
+
+# set limits to map based on locations of detections, ensuring they include the
+# deployment locations
+
+xmin <- min(fall_2021$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(fall_2021$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(fall_2021$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(fall_2021$recvDeployLat, na.rm = TRUE) + 1
+
+###for rails with filtered detections
+for(i in unique_vals7){
+  df_tmp <- fall_2021 %>%
+    filter(motusTagID %in% c(i)) %>%
+    arrange(time_cst)  %>%
+    as.data.frame()
+  
+  # Build segment data
+  df_segments <- df_tmp %>%
+    mutate(
+      x_start = recvDeployLon,
+      y_start = recvDeployLat,
+      x_end   = lead(recvDeployLon),
+      y_end   = lead(recvDeployLat),
+      Year    = as.factor(year(time_cst))
+    ) %>%
+    filter(!is.na(x_end), !is.na(y_end))
+  
+  #Object for species name
+  species <- fall_2021 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  
+  #Create Plot
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      colour = "Year"
+    ) +
+    geom_segment(
+      data = df_segments,
+      aes(x = x_start, y = y_start,
+          xend = x_end, yend = y_end,
+          colour = Year,
+          group = motusTagID),
+      arrow = arrow(type = "open", length = unit(0.25, "cm"))
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat),
+      shape = 16,
+      colour = "black"
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4
+    ) +
+    scale_colour_discrete()
+  
+  ggsave(plot2, file=paste0("Fall_2021_Filtered_Maps/FilterMap_", i,".png"), 
+         width = 14, height = 10, units = "cm", 
+         create.dir = TRUE,
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+  
+}
+
+####### Make for-loop for spatial map for spring 2022
+###################
+###load in important objects for map visuals, should only need to do once if you use the same working directory
+world <- ne_countries(scale = "medium", returnclass = "sf") 
+lakes <- ne_download(scale = "medium", type = 'lakes', category = 'physical',
+                     returnclass = "sf")
+
+###code for adding state/country boundaries
+usmap <- ne_states(country = c("United States of America","Canada"), returnclass = 'sf')
+eastern <- filter(usmap, region %in% c("Midwest","South","Northeast")) 
+
+###determine what values you want to be pulled out for each run of the for-loop
+unique_vals9 = unique(spring_2022$motusTagID)
+
+# set limits to map based on locations of detections, ensuring they include the
+# deployment locations
+
+xmin <- min(spring_2022$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(spring_2022$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(spring_2022$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(spring_2022$recvDeployLat, na.rm = TRUE) + 1
+
+###for rails with filtered detections
+for(i in unique_vals9){
+  df_tmp <- spring_2022 %>%
+    filter(motusTagID %in% c(i)) %>%
+    arrange(time_cst)  %>%
+    as.data.frame()
+  
+  # Build segment data
+  df_segments <- df_tmp %>%
+    mutate(
+      x_start = recvDeployLon,
+      y_start = recvDeployLat,
+      x_end   = lead(recvDeployLon),
+      y_end   = lead(recvDeployLat),
+      Year    = as.factor(year(time_cst))
+    ) %>%
+    filter(!is.na(x_end), !is.na(y_end))
+  
+  #Object for species name
+  species <- spring_2022 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  
+  #Create Plot
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      colour = "Year"
+    ) +
+    geom_segment(
+      data = df_segments,
+      aes(x = x_start, y = y_start,
+          xend = x_end, yend = y_end,
+          colour = Year,
+          group = motusTagID),
+      arrow = arrow(type = "open", length = unit(0.25, "cm"))
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat),
+      shape = 16,
+      colour = "black"
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4
+    ) +
+    scale_colour_discrete()
+  
+  ggsave(plot2, file=paste0("Spring_2022_Filtered_Maps/FilterMap_", i,".png"), 
+         width = 14, height = 10, units = "cm", 
+         create.dir = TRUE,
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+  
+}
+
+### Create maps for Fall 2022
+unique_vals11 = unique(fall_2022$motusTagID)
+
+# set limits to map based on locations of detections, ensuring they include the
+# deployment locations
+
+xmin <- min(fall_2022$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(fall_2022$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(fall_2022$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(fall_2022$recvDeployLat, na.rm = TRUE) + 1
+
+###for rails with filtered detections
+for(i in unique_vals11){
+  df_tmp <- fall_2022 %>%
+    filter(motusTagID %in% c(i)) %>%
+    arrange(time_cst)  %>%
+    as.data.frame()
+  
+  # Build segment data
+  df_segments <- df_tmp %>%
+    mutate(
+      x_start = recvDeployLon,
+      y_start = recvDeployLat,
+      x_end   = lead(recvDeployLon),
+      y_end   = lead(recvDeployLat),
+      Year    = as.factor(year(time_cst))
+    ) %>%
+    filter(!is.na(x_end), !is.na(y_end))
+  
+  #Object for species name
+  species <- fall_2022 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  
+  #Create Plot
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      colour = "Year"
+    ) +
+    geom_segment(
+      data = df_segments,
+      aes(x = x_start, y = y_start,
+          xend = x_end, yend = y_end,
+          colour = Year,
+          group = motusTagID),
+      arrow = arrow(type = "open", length = unit(0.25, "cm"))
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat),
+      shape = 16,
+      colour = "black"
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4
+    ) +
+    scale_colour_discrete()
+  
+  ggsave(plot2, file=paste0("Fall_2022_Filtered_Maps/FilterMap_", i,".png"), 
+         width = 14, height = 10, units = "cm", 
+         create.dir = TRUE,
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+  
+}
+
+unique_vals12 = unique(spring_2023$motusTagID)
+
+# set limits to map based on locations of detections, ensuring they include the
+# deployment locations
+
+xmin <- min(spring_2023$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(spring_2023$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(spring_2023$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(spring_2023$recvDeployLat, na.rm = TRUE) + 1
+
+###for rails with filtered detections
+for(i in unique_vals12){
+  df_tmp <- spring_2023 %>%
+    filter(motusTagID %in% c(i)) %>%
+    arrange(time_cst)  %>%
+    as.data.frame()
+  
+  # Build segment data
+  df_segments <- df_tmp %>%
+    mutate(
+      x_start = recvDeployLon,
+      y_start = recvDeployLat,
+      x_end   = lead(recvDeployLon),
+      y_end   = lead(recvDeployLat),
+      Year    = as.factor(year(time_cst))
+    ) %>%
+    filter(!is.na(x_end), !is.na(y_end))
+  
+  #Object for species name
+  species <- spring_2023 %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  
+  #Create Plot
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      colour = "Year"
+    ) +
+    geom_segment(
+      data = df_segments,
+      aes(x = x_start, y = y_start,
+          xend = x_end, yend = y_end,
+          colour = Year,
+          group = motusTagID),
+      arrow = arrow(type = "open", length = unit(0.25, "cm"))
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat),
+      shape = 16,
+      colour = "black"
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4
+    ) +
+    scale_colour_discrete()
+  
+  ggsave(plot2, file=paste0("Spring_2023_Filtered_Maps/FilterMap_", i,".png"), 
+         width = 14, height = 10, units = "cm", 
+         create.dir = TRUE,
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+  
+}
+
 
 #######Export individual data and create new folders to store them in########
 setwd("R:/Rails_NEW") #if you want to export the data to somewhere other than your original directory (like the samba cluster) you can set that here
