@@ -487,8 +487,6 @@ bad_towers <- c("Missisquoi Bay NWR", #tower in Vermont
                 "Kejimkujik National Park", "Bois de la Roche 2", "Goose Bay", "Pugwash", "Grande-Ile",
                 "Bridgewater2", "Waterside", "Chebogue Point", "Cabot Beach Provincial Park", "Shag Harbor","Truro",
                 "Grève de Tadoussac",
-                "WELL", #tower in MA
-                "MASH", #tower in the Hamptons
                 "Golfo de Santa Clara - RV Park", #Tower on the coast of the Gulf of California
                 "Ensenada - Estero Beach Hotel", #Tower on the pacific coast of Baja
                 "Stump Lake", #Tower in BC
@@ -501,20 +499,15 @@ bad_towers <- c("Missisquoi Bay NWR", #tower in Vermont
                 "Finca El Triunfo", #Tower in Colombia
                 #Whole Bunch of towers in New Hampshire
                 "Weir6", "Gauge House", "Weather Station", "Mid Plot", "West End", "High Plot", "Kineo",
-                "AVNJ", #Tower in NJ
-                "GA_OSS_DOCK", "Harris Neck NWR, GA", #Towers in GA
-                "Parramore Island", #Tower in MD
                 "Alaksen", "Scout Island Nature Centre", #Tower in BC
-                "JBNY", #Tower in NY
-                "ASRI_Bristol", #Tower in MA
-                "Maywood Environmental Park" #Tower in WI
+                "Kent Farm Research Station", #Tower in Indiana
+                "Montna Farms" #Tower in Central California
                 )
 
 ###### NEED TO REVIEW 73234!!!! ###########
 ###### SORA 73270 SHOWS ELLIPTICAL MIGRATION IN FALL. Goes from ND to atlantic coast. Seems legit
 ###### SORA 77501 SHOWS THE SAME THING!! ARE EASTERN DETECTIONS LEGIT?? ######
 
-#Maybe "Kent Farm Research Station" #Tower in Indiana
 #Maybe "McGill_Bird_Observatory", "Beloeil", "Senneville Farm" #Towers in Montreal
 #Maybe "Scotch_Bush" #Tower near Ottowa
 #Maybe "Monocliff", "Walsingham Super Tower", "Glen Rouge Camprgound Parking Lot Loop" #Tower near Toronto
@@ -532,6 +525,14 @@ bad_towers <- c("Missisquoi Bay NWR", #tower in Vermont
 #Maybe "␀CHDE" #Tower in Delaware
 #Maybe "Cape Romain NWR, SC (Bulls Island)", "North Intet - Winyah Bay NERR", "Fort Moultrie" #Towers in SC
 #Maybe "Shelburne Farms"
+#"Parramore Island", #Tower in MD
+#"JBNY", #Tower in NY
+#"ASRI_Bristol", #Tower in MA
+#"AVNJ", #Tower in NJ
+#"GA_OSS_DOCK", "Harris Neck NWR, GA", #Towers in GA
+#"WELL", #tower in MA
+#"MASH", #tower in the Hamptons
+#"Maywood Environmental Park" #Tower in WI
 
 ####### Make for-loop for spatial map for spring 2021
 ###################
@@ -945,6 +946,102 @@ for(i in unique_vals12){
   
 }
 
+
+###############################################################################
+#### Create plots that have potentially bad towers removed ####
+spring_2023_cleaned <- spring_2023 %>% 
+  filter(recvDeployName %ni% bad_towers) %>% 
+  mutate(year = as.character(year(time_cst))) %>% 
+  mutate(season = as.character(month(time_cst))) %>% #Create a new column for the season the bird was tagged during
+  mutate(season = replace(season, season %in% 3:6, "Spring")) %>% #Set all months between March and June as spring
+  mutate(season = replace(season, season %in% 8:11, "Fall")) %>% #Set all months between August and November as Fall
+  mutate(season = replace(season, season %in% c(1,2,12), "Winter")) %>% #Set all months between December and February as Winter
+  mutate(season = replace(season, season %in% 7, "Summer")) %>% #Set all months between July and August as Summer
+  mutate(SeasonYear = paste(season, year, sep = " ")) #create a new column joining the season and year columns
+
+unique_vals13 = unique(spring_2023_cleaned$motusTagID)
+
+# set limits to map based on locations of detections, ensuring they include the
+# deployment locations
+
+xmin <- min(spring_2023_cleaned$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(spring_2023_cleaned$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(spring_2023_cleaned$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(spring_2023_cleaned$recvDeployLat, na.rm = TRUE) + 1
+
+###for rails with filtered detections
+for(i in unique_vals13){
+  df_tmp <- spring_2023_cleaned %>%
+    filter(motusTagID %in% c(i)) %>%
+    arrange(time_cst)  %>%
+    as.data.frame()
+  
+  # Build segment data
+  df_segments <- df_tmp %>%
+    mutate(
+      x_start = recvDeployLon,
+      y_start = recvDeployLat,
+      x_end   = lead(recvDeployLon),
+      y_end   = lead(recvDeployLat),
+      Year    = as.factor(year(time_cst))
+    ) %>%
+    filter(!is.na(x_end), !is.na(y_end))
+  
+  #Object for species name
+  species <- spring_2023_cleaned %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  
+  #Create Plot
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      colour = "Year"
+    ) +
+    geom_segment(
+      data = df_segments,
+      aes(x = x_start, y = y_start,
+          xend = x_end, yend = y_end,
+          #colour = SeasonYear,
+          group = motusTagID)
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat, colour = SeasonYear),
+      shape = 16,
+      #colour = "black"
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4
+    ) +
+    scale_colour_discrete(palette = "viridis")
+  
+  ggsave(plot2, file=paste0("Spring_2023_Cleaned_Maps/CleanMap_", i,".png"), 
+         width = 14, height = 10, units = "cm", 
+         create.dir = TRUE,
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+  
+}
+
+##### List of good birds to map ######
+good_tags <- c("73260", #Has a really nice spring track up to Saskatchewan, 
+               #then doubles back south to Northern MT, where it is picked up in summer, then has an okay fall track
+               "73262", #Interesting track. Moves through MI & Ontario in summer. Also has spring track. Might need to remove Kennekuk
+               "73270", #Best track we have. You can follow it's migration really well from Spring 2023 to Spring 2024
+               "77501", #Few points in spring. Tons of interesting data in fall 2021. Heads to PA
+               "77508", #Need to remove one point in Ontario but otherwise good fall & spring
+               "73256" #Good tracks from Spring 2023 to Spring 2024
+               )
 
 #######Export individual data and create new folders to store them in########
 setwd("R:/Rails_NEW") #if you want to export the data to somewhere other than your original directory (like the samba cluster) you can set that here
