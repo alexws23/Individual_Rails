@@ -478,7 +478,7 @@ for(i in unique_vals12){
          path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
 }
 ###### Towers of Concern #####
-bad_towers <- c("Missisquoi Bay NWR", #tower in Vermont
+bad_towers <- c(#"Missisquoi Bay NWR", #tower in Vermont
                 #lots of towers up in the Nova Scotia area picked up our tags. Seems highly unlikely.
                 "Kent Island", "Allison (Johnston Point II)", "Johnstons Point", "Borden-Carleton",
                 "Selma2", "East Walton", "Cape Jourimain", "Brule Point", "Big Island", "Baie Verte2", 
@@ -501,8 +501,11 @@ bad_towers <- c("Missisquoi Bay NWR", #tower in Vermont
                 "Weir6", "Gauge House", "Weather Station", "Mid Plot", "West End", "High Plot", "Kineo",
                 "Alaksen", "Scout Island Nature Centre", #Tower in BC
                 "Kent Farm Research Station", #Tower in Indiana
-                "Montna Farms" #Tower in Central California
-                )
+                "Montna Farms", #Tower in Central California
+                "Allerton", "Kennekuk 2", "Kennekuk 6",
+                "Reserva de la Biosfera Ria Celestun, CONANP field ", #Tower in Yucatan
+                "Kent Island", "Goose Bay"
+                 )
 
 ###### NEED TO REVIEW 73234!!!! ###########
 ###### SORA 73270 SHOWS ELLIPTICAL MIGRATION IN FALL. Goes from ND to atlantic coast. Seems legit
@@ -1033,6 +1036,91 @@ for(i in unique_vals13){
   
 }
 
+### For Spring 2022 ###
+spring_2022_cleaned <- spring_2022 %>% 
+  filter(recvDeployName %ni% bad_towers) %>% 
+  mutate(year = as.character(year(time_cst))) %>% 
+  mutate(season = as.character(month(time_cst))) %>% #Create a new column for the season the bird was tagged during
+  mutate(season = replace(season, season %in% 3:6, "Spring")) %>% #Set all months between March and June as spring
+  mutate(season = replace(season, season %in% 8:11, "Fall")) %>% #Set all months between August and November as Fall
+  mutate(season = replace(season, season %in% c(1,2,12), "Winter")) %>% #Set all months between December and February as Winter
+  mutate(season = replace(season, season %in% 7, "Summer")) %>% #Set all months between July and August as Summer
+  mutate(SeasonYear = paste(season, year, sep = " ")) #create a new column joining the season and year columns
+
+unique_vals14 = unique(spring_2022_cleaned$motusTagID)
+
+# set limits to map based on locations of detections, ensuring they include the
+# deployment locations
+
+xmin <- min(spring_2022_cleaned$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(spring_2022_cleaned$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(spring_2022_cleaned$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(spring_2022_cleaned$recvDeployLat, na.rm = TRUE) + 1
+
+###for rails with filtered detections
+for(i in unique_vals14){
+  df_tmp <- spring_2022_cleaned %>%
+    filter(motusTagID %in% c(i)) %>%
+    arrange(time_cst)  %>%
+    as.data.frame()
+  
+  # Build segment data
+  df_segments <- df_tmp %>%
+    mutate(
+      x_start = recvDeployLon,
+      y_start = recvDeployLat,
+      x_end   = lead(recvDeployLon),
+      y_end   = lead(recvDeployLat),
+      Year    = as.factor(year(time_cst))
+    ) %>%
+    filter(!is.na(x_end), !is.na(y_end))
+  
+  #Object for species name
+  species <- spring_2022_cleaned %>% 
+    filter(motusTagID == i) %>% 
+    select(speciesEN) %>% 
+    distinct()
+  
+  #Create Plot
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      colour = "Year"
+    ) +
+    geom_segment(
+      data = df_segments,
+      aes(x = x_start, y = y_start,
+          xend = x_end, yend = y_end,
+          #colour = SeasonYear,
+          group = motusTagID)
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat, colour = SeasonYear),
+      shape = 16,
+      #colour = "black"
+    ) +
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4
+    ) +
+    scale_colour_discrete(palette = "viridis")
+  
+  ggsave(plot2, file=paste0("Spring_2022_Cleaned_Maps/CleanMap_", i,".png"), 
+         width = 14, height = 10, units = "cm", 
+         create.dir = TRUE,
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+  
+}
+
 ##### List of good birds to map ######
 good_tags <- c("73260", #Has a really nice spring track up to Saskatchewan, 
                #then doubles back south to Northern MT, where it is picked up in summer, then has an okay fall track
@@ -1042,6 +1130,90 @@ good_tags <- c("73260", #Has a really nice spring track up to Saskatchewan,
                "77508", #Need to remove one point in Ontario but otherwise good fall & spring
                "73256" #Good tracks from Spring 2023 to Spring 2024
                )
+
+
+#### Pretty map ####
+spring_2023_seg <- spring_2023_cleaned %>% 
+  arrange(time_cst)  %>%
+  mutate(
+    x_start = recvDeployLon,
+    y_start = recvDeployLat,
+    x_end   = lead(recvDeployLon),
+    y_end   = lead(recvDeployLat)
+    ) %>%
+    filter(!is.na(x_end), !is.na(y_end))
+
+library(dplyr)
+library(ggplot2)
+library(viridis)
+library(sf)
+
+# Filter data first
+filtered_data <- spring_2023_cleaned %>% 
+  filter(SeasonYear == "Fall 2023") %>%
+  group_by(motusTagID) %>% 
+  filter(n_distinct(recvDeployID) > 1) %>%
+  arrange(motusTagID, time_cst) %>% # ensure points are in time order for path drawing
+  filter(motusTagID %ni% c(73240, 73234)) %>% 
+  mutate(
+    motusTagID = as.factor(motusTagID),
+    is_first = if_else(row_number() == 1, TRUE, FALSE))
+  
+# Plot
+plot3 <- ggplot() +
+  # Base layers
+  geom_sf(data = world, fill = "gray95", colour = NA) +
+  geom_sf(data = lakes, fill = "white", colour = NA) +
+  geom_sf(data = usmap, fill = "gray90", colour = "gray80", linewidth = 0.2) +
+  
+  # Tracks
+  geom_path(
+    data = filtered_data,
+    aes(x = recvDeployLon, y = recvDeployLat, group = motusTagID, colour = as.factor(motusTagID)),
+    linewidth = 0.8
+  ) +
+  
+  geom_point(
+    data = filtered_data %>% filter(is_first),
+    aes(x = recvDeployLon, y = recvDeployLat, colour = motusTagID),
+    shape = 17,   # triangle up
+    size = 3)+
+
+  # Detection points
+  geom_point(
+    data = filtered_data,
+    aes(x = recvDeployLon, y = recvDeployLat, group = motusTagID, colour = as.factor(motusTagID)),
+    size = 1.8
+  ) +
+  
+  # Tag deployment point
+  geom_point(
+    data = filtered_data,
+    aes(x = tagDepLon, y = tagDepLat),
+    colour = "red", shape = 4, size = 2
+  ) +
+  
+  # Map settings
+  coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+  scale_colour_viridis_d(option = "plasma", name = "motusTagID") +
+  theme_bw() +
+  labs(
+    x = "",
+    y = "",
+    title = "Tracks by Individual motusTagID (Fall 2023)"
+  ) +
+  theme(
+    legend.position = "right",
+    panel.grid.major = element_line(colour = "gray90"),
+    panel.grid.minor = element_blank()
+  )
+
+print(plot3)
+
+ggsave(plot3, file=paste0("Fall_2023_All.png"), 
+       width = 25, height = 20, units = "cm", 
+       create.dir = TRUE,
+       path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
 
 #######Export individual data and create new folders to store them in########
 setwd("R:/Rails_NEW") #if you want to export the data to somewhere other than your original directory (like the samba cluster) you can set that here
