@@ -4,6 +4,7 @@ library(DBI)
 library(RSQLite)
 library(sf)
 library(rnaturalearth)
+library(viridis)
 
 ### Set Environment and Working Directory ###
 
@@ -504,7 +505,7 @@ bad_towers <- c(#"Missisquoi Bay NWR", #tower in Vermont
                 "Montna Farms", #Tower in Central California
                 "Allerton", "Kennekuk 2", "Kennekuk 6",
                 "Reserva de la Biosfera Ria Celestun, CONANP field ", #Tower in Yucatan
-                "Kent Island", "Goose Bay"
+                "Kent Island", "Goose Bay", "McGill_Bird_Observatory", "Senneville Farm", "Glen Rouge Camprgound Parking Lot Loop"
                  )
 
 ###### NEED TO REVIEW 73234!!!! ###########
@@ -1133,32 +1134,38 @@ good_tags <- c("73260", #Has a really nice spring track up to Saskatchewan,
 
 
 #### Pretty map ####
-spring_2023_seg <- spring_2023_cleaned %>% 
-  arrange(time_cst)  %>%
-  mutate(
-    x_start = recvDeployLon,
-    y_start = recvDeployLat,
-    x_end   = lead(recvDeployLon),
-    y_end   = lead(recvDeployLat)
-    ) %>%
-    filter(!is.na(x_end), !is.na(y_end))
-
-library(dplyr)
-library(ggplot2)
-library(viridis)
-library(sf)
+fall_mig_prep <- alltags_corrected %>% 
+  filter(recvDeployName %ni% bad_towers) %>% 
+  mutate(year = as.character(year(time_cst))) %>% 
+  mutate(season = as.character(month(time_cst))) %>% #Create a new column for the season the bird was tagged during
+  mutate(season = replace(season, season %in% 3:6, "Spring")) %>% #Set all months between March and June as spring
+  mutate(season = replace(season, season %in% 8:11, "Fall")) %>% #Set all months between August and November as Fall
+  mutate(season = replace(season, season %in% c(1,2,12), "Winter")) %>% #Set all months between December and February as Winter
+  mutate(season = replace(season, season %in% 7, "Summer")) %>% #Set all months between July and August as Summer
+  mutate(SeasonYear = paste(season, year, sep = " ")) #create a new column joining the season and year columns
 
 # Filter data first
-filtered_data <- spring_2023_cleaned %>% 
-  filter(SeasonYear == "Fall 2023") %>%
+filtered_data <- fall_mig_prep %>% 
+  filter(SeasonYear %in% c("Fall 2022")) %>% 
+  filter(speciesEN == "Sora") %>% 
   group_by(motusTagID) %>% 
   filter(n_distinct(recvDeployID) > 1) %>%
   arrange(motusTagID, time_cst) %>% # ensure points are in time order for path drawing
-  filter(motusTagID %ni% c(73240, 73234)) %>% 
+  filter(motusTagID %ni% c(73240, 73234
+                           #,57121,57122,57146,57167,57171
+                           )) %>% 
   mutate(
     motusTagID = as.factor(motusTagID),
     is_first = if_else(row_number() == 1, TRUE, FALSE))
-  
+
+# set limits to map based on locations of detections, ensuring they include the
+# deployment locations
+
+xmin <- min(filtered_data$recvDeployLon, na.rm = TRUE) - 2
+xmax <- max(filtered_data$recvDeployLon, na.rm = TRUE) + 2
+ymin <- min(filtered_data$recvDeployLat, na.rm = TRUE) - 1
+ymax <- max(filtered_data$recvDeployLat, na.rm = TRUE) + 1
+
 # Plot
 plot3 <- ggplot() +
   # Base layers
