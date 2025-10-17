@@ -1,6 +1,8 @@
 library(tidyverse)
 library(ggthemes)
 library(flextable)
+library(paletteer)
+library(ggnewscale)
 
 ### Set Environment and Working Directory ###
 
@@ -44,30 +46,61 @@ print(season_plot)
 
 ggsave("avg_duration_season.png", plot = season_plot, path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
 
-#Make a horizontal bar chart with the data grouped by Year and species
+#Make a horizontal bar chart with the data grouped by Year and species with facet_wrap
 year_plot <- stopover_cleaned %>% 
   mutate(Year = as.character(Year)) %>% 
-  group_by(Year, Species) %>% #group by both Year and Species to preserve both variables in summary
+  group_by(Year, Species, season) %>% #group by both Year and Species to preserve both variables in summary
   summarise(avg_stop = mean(Min.Stopover.Duration), #Calculate mean stopover duration
             CI_low = 0,#avg_stop - 2 * sd(Min.Stopover.Duration), #set lower bounds of CI as 0
-            CI_high = avg_stop + 2 * sd(Min.Stopover.Duration)) %>% #Set upper bounds of CI as the average plus 2 times the standard deviation for a 95% CI
+            CI_high = avg_stop + 2 * sd(Min.Stopover.Duration),#Set upper bounds of CI as the average plus 2 times the standard deviation for a 95% CI
+            n = n()) %>% 
   ungroup() %>% 
-  ggplot(aes(x = avg_stop, y = Year)) + #Set the universal aesthetics for x & y
-  geom_col(aes(fill = Species), #make fill color different based on species
-           width = .6, #Narrow the width of the bar
-           position = position_dodge(reverse = TRUE)) + #Dodge the position so the bars aren't on top of one another
+  ggplot(aes(x = avg_stop, y = Year)) + #Set the universal aesthetics for x & Y
   geom_errorbar(aes(xmin = CI_low, xmax = CI_high, color = Species), #set aesthetics for the error bars
                 position = position_dodge(reverse = TRUE), #Dodge the position so the lines aren't on top of one another
                 width = .6) + #Narrow the width of the line
+  geom_col(aes(fill = Species), #make fill color different based on species
+           width = .6, #Narrow the width of the bar
+           position = position_dodge(reverse = TRUE),
+           color = "#023743FF") + #Dodge the position so the bars aren't on top of one another
+  scale_color_manual(values = c("SORA" = "#023743FF", "VIRA" = "#023743FF")) + #set line colors
+  ggnewscale::new_scale_color()+
+  geom_text(aes(label = n, color = Species),
+            position = position_dodge(width = 0.6, reverse = TRUE),
+            hjust = 1.5, # move slightly right of the bar
+            size = 3,
+            show.legend = FALSE) +
+  scale_color_manual(values = c("SORA" = "gray5", "VIRA" = "gray97")) + #set line colors
   theme_minimal() + #Set the theme
   labs(x = "Average Minimum Stopover Duration (Days)", y = "Year Tagged") + #Add labels
-  scale_fill_manual(values = c("SORA" = "gray10", "VIRA" = "gray70")) + #manually set fill colors
-  scale_color_manual(values = c("SORA" = "gray10", "VIRA" = "gray70")) + #manually set line colors
-  theme(panel.grid = element_blank())
+  scale_fill_manual(values = c("SORA" = "#FED789FF", "VIRA" = "#476F84FF")) + #manually set fill colors
+  theme(panel.grid = element_blank()) +
+  theme(axis.line = element_line(color = "black"))+
+  facet_wrap(~season, scales = "free_y")
 
 print(year_plot)
 
 ggsave("avg_duration_year.png", plot = year_plot, path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+
+#Make a box plot for the stopover duration data. 
+box_plot  <- stopover_cleaned %>% 
+  mutate(Year = as.character(Year)) %>%
+  ggplot(aes(y = Min.Stopover.Duration, x = Year)) + #Set the universal aesthetics for x & y
+  geom_boxplot(aes(fill = Species, color = Species)#make fill color different based on species
+               #width = .6, #Narrow the width of the bar
+               #position = position_dodge(reverse = TRUE) #Dodge the position so the bars aren't on top of one another
+    ) + 
+  theme_minimal() + #Set the theme
+  labs(x = "Minimum Stopover Duration (Days)", y = "Year Tagged") + #Add labels
+  scale_fill_manual(values = c("SORA" = "#FED789FF", "VIRA" = "#476F84FF")) + #manually set fill colors
+  scale_color_manual(values = c("SORA" = "#023743FF", "VIRA" = "#023743FF")) + #set line colors
+  theme(panel.grid = element_blank()) +
+  theme(axis.line = element_line(color = "black"))+
+  facet_wrap(~season, scales = "free_x")
+
+print(box_plot)
+
+ggsave("boxplot.png", plot = box_plot, path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
 
 #Make a horizontal bar chart with the data grouped by season, year and species
 season_year_plot <- stopover_cleaned %>% 

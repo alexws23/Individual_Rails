@@ -91,7 +91,7 @@ filtered_data <- fall_mig_prep %>%
     "Spring 2022" 
     ,"Spring 2023"
     )) %>% 
-  filter(speciesEN == "Virginia Rail") %>% 
+  filter(speciesEN == "Sora") %>% 
   group_by(interaction(motusTagID, SeasonYear)) %>% 
   filter(n_distinct(recvDeployID) > 1) %>%
   arrange(motusTagID, time_cst) %>% # ensure points are in time order for path drawing
