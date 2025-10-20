@@ -505,7 +505,10 @@ bad_towers <- c(#"Missisquoi Bay NWR", #tower in Vermont
                 "Montna Farms", #Tower in Central California
                 "Allerton", "Kennekuk 2", "Kennekuk 6",
                 "Reserva de la Biosfera Ria Celestun, CONANP field ", #Tower in Yucatan
-                "Kent Island", "Goose Bay", "McGill_Bird_Observatory", "Senneville Farm", "Glen Rouge Camprgound Parking Lot Loop"
+                "Kent Island", "Goose Bay", "McGill_Bird_Observatory", "Senneville Farm", "Glen Rouge Camprgound Parking Lot Loop",
+                "GA_OSS_DOCK", "Harris Neck NWR, GA", #Towers in GA
+                "Parramore Island", #Tower in MD
+                "AVNJ" #Tower in NJ
                  )
 
 ###### NEED TO REVIEW 73234!!!! ###########
