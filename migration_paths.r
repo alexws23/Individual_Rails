@@ -424,10 +424,12 @@ filtered_data <- mig_prep %>%
   group_by(interaction(motusTagID, SeasonYear)) %>% 
   filter(n_distinct(recvDeployID) > 1) %>%
   arrange(motusTagID, time_cst) %>% # ensure points are in time order for path drawing
-  filter(motusTagID %ni% c(73240, 73234, 65888,57167)) %>% 
+  filter(motusTagID %ni% c(73240, 73234,57167,57283)) %>% 
   mutate(
     motusTagID = as.factor(motusTagID),
     is_first = if_else(row_number() == 1, TRUE, FALSE))
+
+n_distinct(filtered_data$motusTagID)
 
 # set limits to map based on locations of detections, ensuring they include the
 # deployment locations
@@ -513,10 +515,12 @@ filtered_data <- mig_prep %>%
   group_by(interaction(motusTagID, SeasonYear)) %>% 
   filter(n_distinct(recvDeployID) > 1) %>%
   arrange(motusTagID, time_cst) %>% # ensure points are in time order for path drawing
-  filter(motusTagID %ni% c(73240, 73234, 65888,57167)) %>% 
+  filter(motusTagID %ni% c(73240, 73234,57167,57283)) %>% 
   mutate(
     motusTagID = as.factor(motusTagID),
     is_first = if_else(row_number() == 1, TRUE, FALSE))
+
+n_distinct(filtered_data$motusTagID)
 
 
 # set limits to map based on locations of detections, ensuring they include the
@@ -603,10 +607,13 @@ filtered_data <- mig_prep %>%
   group_by(interaction(motusTagID, SeasonYear)) %>% 
   filter(n_distinct(recvDeployID) > 1) %>%
   arrange(motusTagID, time_cst) %>% # ensure points are in time order for path drawing
-  filter(motusTagID %ni% c(73240, 73234, 65888,57167)) %>% 
+  filter(motusTagID %ni% c(73240, 73234,57167,57283)) %>% 
   mutate(
     motusTagID = as.factor(motusTagID),
     is_first = if_else(row_number() == 1, TRUE, FALSE))
+
+n_distinct(filtered_data$motusTagID)
+
 
 # set limits to map based on locations of detections, ensuring they include the
 # deployment locations
@@ -687,10 +694,12 @@ filtered_data <- mig_prep %>%
   group_by(interaction(motusTagID, SeasonYear)) %>% 
   filter(n_distinct(recvDeployID) > 1) %>%
   arrange(motusTagID, time_cst) %>% # ensure points are in time order for path drawing
-  filter(motusTagID %ni% c(73240, 73234, 65888,57167)) %>% 
+  filter(motusTagID %ni% c(73240, 73234,57167,57283)) %>% 
   mutate(
     motusTagID = as.factor(motusTagID),
     is_first = if_else(row_number() == 1, TRUE, FALSE))
+
+n_distinct(filtered_data$motusTagID)
 
 # set limits to map based on locations of detections, ensuring they include the
 # deployment locations
