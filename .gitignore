@@ -2,5 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+.RDataTmp
 /Data
 /Imgs

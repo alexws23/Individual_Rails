@@ -177,7 +177,88 @@ only_good_tower <- alltags_corrected %>%
   mutate(season = replace(season, season %in% 7, "Summer")) %>% #Set all months between July and August as Summer
   mutate(SeasonYear = paste(season, year, sep = " "))    #create a new column joining the season and year columns
 
+# Summarize by bird and receiver site
+site_summary <- only_good_tower %>%
+  group_by(motusTagID, recvDeployName, recvDeployLon, recvDeployLat) %>%
+  summarise(
+    first_det = min(time_cst, na.rm = TRUE),
+    last_det  = max(time_cst, na.rm = TRUE),
+    duration_days = as.numeric(difftime(last_det, first_det, units = "days")),
+    .groups = "drop"
+  )
+
 unique = unique(only_good_tower$motusTagID)
+
+
+######## TEST LOOP
+for(i in unique) {
+  
+  df_tmp <- only_good_tower %>%
+    filter(motusTagID == i) %>%
+    arrange(time_cst)
+  
+  df_summary <- site_summary %>%
+    filter(motusTagID == i)
+  
+  species <- df_tmp %>%
+    distinct(speciesEN) %>%
+    pull()
+  
+  # Optional: remove specific problem tower for this ID
+  if (i == 63993) {
+    df_tmp <- df_tmp %>%
+      filter(recvDeployName != "Cape Romain NWR, SC (Bulls Island)")
+    df_summary <- df_summary %>%
+      filter(recvDeployName != "Cape Romain NWR, SC (Bulls Island)")
+  }
+  
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      color = "Last detection",
+      size = "Duration (days)"
+    ) +
+    
+    # Bird path
+    geom_path(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat, group = SeasonYear),
+      linewidth = 0.8
+    ) +
+    
+    # Detection sites: color = recency, size = duration
+    geom_point(
+      data = df_summary,
+      aes(x = recvDeployLon, y = recvDeployLat,
+          color = last_det,
+          size = duration_days),
+      alpha = 0.9
+    ) +
+    
+    # Tag deployment point
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4, size = 2
+    ) +
+    
+    scale_color_viridis_c(option = "plasma", direction = -1) +
+    scale_size_continuous(range = c(1, 6)) +
+    theme(legend.position = "right")
+  
+  ggsave(plot2, file = paste0("Detection_maps_good_towers/good_towers_map_", i, ".png"), 
+         width = 14, height = 10, units = "cm", 
+         create.dir = TRUE,
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+}
+
 
 #For-loop to create plots
 for(i in unique){
@@ -248,14 +329,14 @@ for(i in unique){
     geom_path(
       data = df_tmp,
       aes(x = recvDeployLon, y = recvDeployLat, 
-          group = motusTagID),
+          group = SeasonYear),
       linewidth = 0.8
     ) +
     
     # Detection points
     geom_point(
       data = df_tmp,
-      aes(x = recvDeployLon, y = recvDeployLat, group = motusTagID, colour = as.factor(SeasonYear)),
+      aes(x = recvDeployLon, y = recvDeployLat, group = motusTagID, colour = as.factor(+date_cst)),
       size = 1.8
     )  +
     
@@ -370,7 +451,7 @@ for(i in unique2){
     geom_path(
       data = df_tmp,
       aes(x = recvDeployLon, y = recvDeployLat, 
-          group = motusTagID),
+          group = SeasonYear),
       linewidth = 0.8
     ) +
     
@@ -388,7 +469,7 @@ for(i in unique2){
       colour = "red", shape = 4, size = 2
     ) +
     
-    scale_colour_viridis_d()
+    scale_colour_paletteer_c(`"grDevices::terrain.colors"`)
   
   ggsave(plot2, file=paste0("Detection_maps_all_towers/all_towers_map_", i,".png"), 
          width = 14, height = 10, units = "cm", 
