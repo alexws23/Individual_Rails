@@ -11,6 +11,7 @@ library(viridis)
 
 Sys.setenv(TZ = "UTC") #Ensure that the system environment's timezone is set to UTC
 setwd("C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Data") #Set your working directory
+setwd("~/Library/CloudStorage/Box-Box/Data") #Box drive
 getwd()
 
 ### Bring the MOTUS data into R and clean it ###
@@ -181,8 +182,8 @@ only_good_tower <- alltags_corrected %>%
 site_summary <- only_good_tower %>%
   group_by(motusTagID, recvDeployName, recvDeployLon, recvDeployLat) %>%
   summarise(
-    first_det = min(time_cst, na.rm = TRUE),
-    last_det  = max(time_cst, na.rm = TRUE),
+    first_det = min(date_cst, na.rm = TRUE),
+    last_det  = max(date_cst, na.rm = TRUE),
     duration_days = as.numeric(difftime(last_det, first_det, units = "days")),
     .groups = "drop"
   )
@@ -256,7 +257,9 @@ for(i in unique) {
   ggsave(plot2, file = paste0("Detection_maps_good_towers/good_towers_map_", i, ".png"), 
          width = 14, height = 10, units = "cm", 
          create.dir = TRUE,
-         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+         path = "~/Library/CloudStorage/Box-Box/Data/Imgs"
+         #path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs"
+  )
 }
 
 
@@ -352,7 +355,9 @@ for(i in unique){
   ggsave(plot2, file=paste0("Detection_maps_good_towers/good_towers_map_", i,".png"), 
          width = 14, height = 10, units = "cm", 
          create.dir = TRUE,
-         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs")
+         path = "~/Library/CloudStorage/Box-Box/Data/Imgs"
+         #path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs"
+         )
   
 }
 
