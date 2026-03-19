@@ -50,7 +50,7 @@ df.tagDeps <- tbl.tagDeps %>%
          ) # %>% 
   #rename(Band_Number = bandNumber)
 
-######Optional if your tagDeps DF doesn't include band number information######
+###### Optional if your tagDeps DF doesn't include band number information ######
 ##If the tagDeps dataframe doesn't have data in the bandNumber column, you will need to get that information from elsewhere.
 ##For the rail data, I had a separate CSV that had the Motus tag ID (called tagID in the "tagDeps" df) and the band numbers.
 ##If this is the case for you, follow the next steps.
@@ -60,7 +60,6 @@ band_numbers <- read.csv("rails.csv") %>%
   mutate(Band_Number = gsub("-","", Band_Number)) %>% #If the band numbers include a "-" you can remove that with the gsub function
   rename(tagID = Motus.ID) #Change the name of the motus tag ID column to "tagID" if needed
 
-######
 #Join the band_numbers data frame to the tagDeps dataframe by the "tagID"
 df.tagDeps <- df.tagDeps %>% 
   left_join(band_numbers, by = "tagID")

@@ -76,11 +76,14 @@ alltags_unfiltered <- alltags %>%
 ### Filtering the Data ###
 #filter the data to only include data where the motusFilter equals 1
 alltags_motus_filter <- alltags_unfiltered %>% 
-  filter(motusFilter == 1)
+  filter(motusFilter == 1,
+         runLen > 3)
 
 #remove all rows where the receiver info is missing
 alltags_na_receivers <- alltags_motus_filter %>%
   drop_na(recvDeployLat | recvDeployName)
+
+write.csv(alltags_na_receivers, "alltags_filtered.csv")
 
 ############# Prepping data for visualization and analysis
 alltags_ordered <- mutate(alltags_na_receivers, recvDeployName = reorder(recvDeployName,recvDeployLat))
@@ -168,6 +171,21 @@ bad_towers <- c("Missisquoi Bay NWR", #tower in Vermont
 
 #### Creating plots of all detections, minus the bad towers
 
+tag <- alltags_unfiltered %>% 
+  filter(motusTagID == 57174
+) %>% 
+  mutate(tag_time = as_datetime(tagDeployStart)) %>% 
+  mutate(date = date(time)) %>% 
+  mutate(time_cst = with_tz(time, "US/Central")) %>% 
+  mutate(date_cst = date(time_cst)) %>% 
+  mutate(year = as.character(year(time_cst))) %>% 
+  mutate(season = as.character(month(time_cst))) %>% #Create a new column for the season the bird was tagged during
+  mutate(season = replace(season, season %in% 3:6, "Spring")) %>% #Set all months between March and June as spring
+  mutate(season = replace(season, season %in% 8:11, "Fall")) %>% #Set all months between August and November as Fall
+  mutate(season = replace(season, season %in% c(1,2,12), "Winter")) %>% #Set all months between December and February as Winter
+  mutate(season = replace(season, season %in% 7, "Summer")) %>% #Set all months between July and August as Summer
+  mutate(SeasonYear = paste(season, year, sep = " "))    #create a new column joining the season and year columns
+
 only_good_tower <- alltags_corrected %>% 
   filter(recvDeployName %ni% bad_towers) %>% 
   mutate(year = as.character(year(time_cst))) %>% 
@@ -180,7 +198,7 @@ only_good_tower <- alltags_corrected %>%
 
 # Summarize by bird and receiver site
 site_summary <- only_good_tower %>%
-  group_by(motusTagID, recvDeployName, recvDeployLon, recvDeployLat) %>%
+  group_by(motusTagID, recvDeployName, recvDeployLon, recvDeployLat, SeasonYear) %>%
   summarise(
     first_det = min(date_cst, na.rm = TRUE),
     last_det  = max(date_cst, na.rm = TRUE),
@@ -238,7 +256,7 @@ for(i in unique) {
     geom_point(
       data = df_summary,
       aes(x = recvDeployLon, y = recvDeployLat,
-          color = last_det,
+          color = as.factor(last_det),
           size = duration_days),
       alpha = 0.9
     ) +
@@ -250,15 +268,15 @@ for(i in unique) {
       colour = "red", shape = 4, size = 2
     ) +
     
-    scale_color_viridis_c(option = "plasma", direction = -1) +
+    scale_color_viridis_d(option = "plasma", direction = -1) +
     scale_size_continuous(range = c(1, 6)) +
     theme(legend.position = "right")
   
   ggsave(plot2, file = paste0("Detection_maps_good_towers/good_towers_map_", i, ".png"), 
          width = 14, height = 10, units = "cm", 
          create.dir = TRUE,
-         path = "~/Library/CloudStorage/Box-Box/Data/Imgs"
-         #path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs"
+         #path = "~/Library/CloudStorage/Box-Box/Data/Imgs"
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs"
   )
 }
 
@@ -388,7 +406,89 @@ all_tower <- unfilter_corrected %>%
   mutate(season = replace(season, season %in% 7, "Summer")) %>% #Set all months between July and August as Summer
   mutate(SeasonYear = paste(season, year, sep = " "))    #create a new column joining the season and year columns
 
+# Summarize by bird and receiver site
+site_summary_all <- all_tower %>%
+  group_by(motusTagID, recvDeployName, recvDeployLon, recvDeployLat, SeasonYear) %>%
+  summarise(
+    first_det = min(date_cst, na.rm = TRUE),
+    last_det  = max(date_cst, na.rm = TRUE),
+    duration_days = as.numeric(difftime(last_det, first_det, units = "days")),
+    .groups = "drop"
+  )
+
 unique2 = unique(all_tower$motusTagID)
+
+######## TEST LOOP
+for(i in unique) {
+  
+  df_tmp <- all_tower %>%
+    filter(motusTagID == i) %>%
+    arrange(time_cst)
+  
+  df_summary <- site_summary_all %>%
+    filter(motusTagID == i)
+  
+  species <- df_tmp %>%
+    distinct(speciesEN) %>%
+    pull()
+  
+  # Optional: remove specific problem tower for this ID
+  if (i == 63993) {
+    df_tmp <- df_tmp %>%
+      filter(recvDeployName != "Cape Romain NWR, SC (Bulls Island)")
+    df_summary <- df_summary %>%
+      filter(recvDeployName != "Cape Romain NWR, SC (Bulls Island)")
+  }
+  
+  plot2 <- ggplot(data = world) +
+    geom_sf(colour = NA) +
+    geom_sf(data = lakes, colour = NA, fill = "white") +
+    geom_sf(data = usmap, fill = "gray98") +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme_bw() +
+    labs(
+      x = "",
+      y = "",
+      subtitle = species,
+      color = "Last detection",
+      size = "Duration (days)"
+    ) +
+    
+    # Bird path
+    geom_path(
+      data = df_tmp,
+      aes(x = recvDeployLon, y = recvDeployLat, group = SeasonYear),
+      linewidth = 0.8
+    ) +
+    
+    # Detection sites: color = recency, size = duration
+    geom_point(
+      data = df_summary,
+      aes(x = recvDeployLon, y = recvDeployLat,
+          color = as.factor(last_det),
+          size = duration_days),
+      alpha = 0.9
+    ) +
+    
+    # Tag deployment point
+    geom_point(
+      data = df_tmp,
+      aes(x = tagDepLon, y = tagDepLat),
+      colour = "red", shape = 4, size = 2
+    ) +
+    
+    scale_color_viridis_d(option = "plasma", direction = -1) +
+    scale_size_continuous(range = c(1, 6)) +
+    theme(legend.position = "right")
+  
+  ggsave(plot2, file = paste0("Detection_maps_all_towers/all_towers_map_", i, ".png"), 
+         width = 14, height = 10, units = "cm", 
+         create.dir = TRUE,
+         #path = "~/Library/CloudStorage/Box-Box/Data/Imgs"
+         path = "C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Imgs"
+  )
+}
+
 
 #For-loop to create plots
 for(i in unique2){
