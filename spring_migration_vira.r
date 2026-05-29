@@ -33,7 +33,7 @@ df <- alltags_corrected %>%
 bad_dates <- ymd(c("2024-04-18", "2024-04-19", "2024-04-22", "2024-05-18"))
 
 tag <- d %>% 
-  filter(alpha_code == "SORA") %>% 
+  filter(alpha_code == "VIRA") %>% 
   mutate(time = as_datetime(time)) %>% 
   mutate(s2n = sig-noise) %>% 
   filter(
@@ -120,7 +120,7 @@ map <- ggplot() +
   geom_sf(data = lakes, colour = NA, fill = "gray80")+
   #geom_sf(data = usmap, fill = NA)+
   geom_sf(data = states,fill=NA)+
-  geom_sf(data = sora_range, aes(fill = season), alpha = 0.5, color = NA) +
+  geom_sf(data = vira_range, aes(fill = season), alpha = 0.5, color = NA) +
   #geom_sf(data = points_sf, aes(color = s2n))+
   geom_path(
     data = points_sf,
@@ -162,7 +162,7 @@ map <- ggplot() +
   labs(
     x = "",
     y = "",
-    title = "SORA"
+    title = "VIRA"
   ) +
   theme(
     panel.grid.major = element_blank(),
@@ -173,5 +173,5 @@ map <- ggplot() +
 
 map
 
-ggsave(filename = paste("tracks_SORA_spring.png", sep = "_"), plot = map)
+ggsave(filename = paste("tracks_VIRA_spring.png", sep = "_"), plot = map)
 

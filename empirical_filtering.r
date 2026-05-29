@@ -11,6 +11,8 @@ library(lubridate)
 # set base theme for plots
 theme_set(theme_bw(base_size = 18))
 
+setwd("C:/Users/awsmilor/Git/Ward Lab/Individual_Rails/Data")
+
 ### download sample data from James Bay Shorebird Project #176
 #   note: if you haven't downloaded sample dataset before, use 'new = T'
 #   login name and password are both 'motus.sample'
@@ -141,6 +143,10 @@ plotdata <- data.frame(group = rep(c("meanSigSD", "meanNoise", "meanFreqSD",
                                  runFeat$meanBurstSlop),
                        category = c(rep(runFeat$category, 5))) #%>%
 #filter(category != "unassigned") # uncomment the %>% filter() statement to ignore the 'unassigned'
+plotdata <- plotdata %>% 
+  filter(!(group == "meanFreqSD" & value == 0),
+         !(group == "meanSigSD" & value == 0))
+
 
 p2 <- ggplot(data = plotdata, 
              aes(x = abs(value), group = category, colour = category)) +
@@ -150,6 +156,8 @@ p2 <- ggplot(data = plotdata,
 rm(plotdata)
 
 p2
+
+ggsave(plot = p2, filename = "diagnostic_parameters_plot.png")
 
 # get activity table
 a <- tbl(db, "activity")

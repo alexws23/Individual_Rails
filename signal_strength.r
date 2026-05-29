@@ -2,6 +2,7 @@ library(tidyverse)
 library(sf)
 library(rnaturalearth)
 
+setwd("C:/Users/awsmilor/Git/Ward Lab/Individual_Rails")
 getwd()
 
 alltags_filtered <- read.csv("alltags_filtered.csv")
@@ -20,7 +21,9 @@ alltags_corrected <- alltags_cleaned %>%
   mutate(time_cst = with_tz(time, "US/Central")) %>% 
   mutate(date_cst = date(time_cst))
 
-df <- alltags_corrected %>%
+"%ni%" <- Negate("%in%")
+
+d <- alltags_corrected %>%
   mutate(year = as.character(year(time_cst))) %>% 
   mutate(season = as.character(month(time_cst))) %>% #Create a new column for the season the bird was tagged during
   mutate(season = replace(season, season %in% 4:5, "Spring")) %>% #Set all months between March and June as spring
@@ -30,15 +33,12 @@ df <- alltags_corrected %>%
   mutate(SeasonYear = paste(season, year, sep = " ")) %>%  #create a new column joining the season and year columns
   filter(motusTagID %ni% c(53163, 57153,57136,57178,57281,57344,62560,73241,73257,73258,73261,77498,77510)) #remove birds where the transmitter dropped from dataset
 
+rm(list = c("alltags_filtered", "alltags_ordered", "alltags_cleaned", "alltags_corrected"))
+
 bad_dates <- ymd(c("2024-04-18", "2024-04-19", "2024-04-22", "2024-05-18"))
 
-tag <- df %>% 
-  #filter(motusTagID %ni% c(65911, 45885,45889,53098, 53099, 53101, 53102, 53104, 53158, 53160, 53162, 53894,57121,57122,57123,57124,57125,57126,57128,57129,57130, 57133,
-   #                        57134, 57137,57138,57139, 57140, 57141,57142,57143,57144, 57146, 57147, 57148,57149,57150,57153, 57154,57155,57158,57159,57160,57161,57162,57165,
-    #                       57166, 57167, 57169, 57171, 57172,57173,57183,57185, 57190,57279,57280,57342,62539,62550,62551,62556,62558,62559,62560,62561, 62563,62566,62569,
-     #                      62571, 63995,63999,64003,64004, 65888,65889,65890,65891
-      #                     )) %>% 
-  filter(alpha_code == "VIRA") %>% 
+tag <- d %>% 
+  filter(alpha_code == "SORA") %>% 
   mutate(time = as_datetime(time)) %>% 
   mutate(s2n = sig-noise) %>% 
   filter(
@@ -62,14 +62,34 @@ tag <- df %>%
     !(motusTagID == 67763 & recvDeployName %in% c("Weir6","West End")), #A few sporadic detections in NH over a few days. Maybe okay? No other detections to verify
     !(motusTagID == 62539 & recvDeployName == "Kejimkujik National Park"), # Short run (4) in spring after tagging. Detected south of this point near lake Ontario 2 weeks later
     !(motusTagID == 73226 & recvDeployName %in% c("Kejimkujik National Park", "Kennekuk 2")), # Short run at KNP probably not real. Weird detections in April at Kennekuk are suspect given good track later in may
-    !(motusTagID == 73238 & recvDeployName == "Stump Lake") # Short run (4) that contradicts more probable detections 
+    !(motusTagID == 73238 & recvDeployName == "Stump Lake"), # Short run (4) that contradicts more probable detections 
+    !(motusTagID == 53105 & recvDeployName %in% c("Golfo de Santa Clara - RV Park","Birds Canada HQ")), #Dubious detections that don't make sense in space or time.
+    !(motusTagID == 57174 & recvDeployName %in% c("Florida Panther NWR, FL")), #some extremely unlikely detections in august (no records of VIRA in south FL in August on eBird). Detections in October plausible, but probably unlikely given stronger detections. Only a few detections actually are possible. All relatively low s2n.
+    !(motusTagID == 63993 & recvDeployName %in% c("AVNJ", "Cape Romain NWR, SC (Bulls Island)", "GA_OSS_DOCK", "Parramore Island")), #All short records that conflict with other much better detections.
+    !(motusTagID == 73207 & recvDeployName %in% c("Pumphouse")), #Short run (4) at Pumphouse in late november. While it's plausible that the bird was present I feel that the short run + very low S2N make it unlikely
+    !(motusTagID == 73234 & recvDeployName %in% c("Bluestem Farm", "RPBO-Donnecke")), #Two short (4) runs. One on the east coast on 9-05, one on the west coast on 9-15. I doubt the bird flew west across the continent in ten days. Also low s2n
+    !(motusTagID == 73240 & recvDeployName %in% c("Bluestem Farm", "Santa Ana NWR", "Shag Harbour")), #All low S2N and short runs (4-5). Plus, don't make a lot of contextual sense.Supposedly bird went from MD to south TX, then to Nova Scotia
+    !(motusTagID == 73244 & recvDeployName %in% c("Pumphouse")), #Short run (4) at Pumphouse in late november with low S2N. Doesn't make contextual sense
+    !(motusTagID == 73201 & recvDeployName %in% c("Swan Bay")), #Short run (4) almost 2 weeks after better detections of the bird further to the north east.
+    !(motusTagID == 73222 & recvDeployName %in% c("Alaksen")), # Quite a few detections, but given  the context of other detections, it seems likely that these detections in BC are spurious.
+    !(motusTagID == 73234 & recvDeployName %in% c("Shawanaga Old Gas Station", "Scout Island Nature Centre", "Stump Lake", "Kennekuk 2", "Kennekuk 6", "Allerton")), #Mix of short runs (4-5) and extremely dubious detections in western Canada. Also some suspect detections around kennekuk.
+    !(motusTagID == 73240 & recvDeployName %in% c("Stump Lake")), #BC detections don't make sense given more concrete detections a week later as the bird migrated northeast through Iowa
+    !(motusTagID == 64001 & recvDeployName %in% c("Chad")), #Only two detection and both a relatively short runs (5). Southbound movement between detections. Feels unlikely. Not sure which, if either, are true.
+    !(motusTagID == 63996 & recvDeployName %in% c("Chad")), # Quite a few detections at Chad but I think the fact that it was almost simultaneously detected at two more northerly towers a few weeks prior rules these out as correct.
+    !(motusTagID == 77508 & recvDeployName %in% c("Split Rock")), #Summer detection that doesn't make sense. Short run too.
+    !(motusTagID == 57190 & recvDeployName %in% c("Johnstons Point", "Selma2", "Truro")), #Plausible detections in Nova Scotia, but they look really weird. Short (4-6) runs with fairly low S2N. Probably aliasing
+    !(motusTagID == 57340 & recvDeployName %in% c("Johnstons Point", "Allison (Johnston Point II)", "Linden2")), #Plausible detections in Nova Scotia, but they look really weird. Short (4-6) runs with fairly low S2N. Probably aliasing
+    !(motusTagID == 73240 & recvDeployName %in% c("Stump Lake")), #Highly unlikely BC detections. Multiple short (4-6) runs over 30 minutes at low S2N. Feels more like aliasing than true detections.
+    !(motusTagID == 73256 & recvDeployName %in% c("Pumphouse")), #Conflicting short (4) run
+    !(motusTagID == 73225 & recvDeployName %in% c("Stump Lake")), #Conflicts with summer detection
+    !(motusTagID == 62569 & recvDeployName %in% c("Weir6", "High Plot")) #Sporadic detections over a few weeks in august. Towers located in dense forest
     ) %>% 
   filter(time_cst < tag_time + 38880000) %>% 
   filter(recvDeployName %ni% c("Kent Island", "Triton2","Bois de la Roche 2", "Bois de la Roche 1", "McGill_Bird_Observatory", "Kent Farm Research Station")) %>%  #these towers are clearly bad. Keep coming up in nonsensical ways
   filter(!(recvDeployName %in% c("Kennekuk 2", "Allerton", "Kennekuk 6") & date(time_cst) %in% bad_dates))
   
 facet_labels <- tag %>%
-  filter(motusTagID == 73225) %>%
+  filter(motusTagID == 62571) %>%
   group_by(recvDeployName) %>%
   summarise(
     min_date = min(time, na.rm = TRUE),
@@ -82,19 +102,19 @@ facet_labels <- tag %>%
   ))
 
 plot_data <- tag %>%
-  filter(motusTagID == 73225) %>% 
-  filter(season %in% c("Spring","Winter")) %>%
+  filter(motusTagID == 62571) %>% 
+  filter(season %in% c("Fall", "Summer", "Winter")) %>%
   left_join(facet_labels, by = "recvDeployName")
 
 plot <- ggplot(plot_data, aes(x = time, y = s2n, group = recvDeployName)) +
   geom_line() +
   geom_point() +
   theme_minimal() +
-  facet_wrap(~ label, scales = "free_x")
+  facet_wrap(~ label, scales = "free")
 
 plot
 
-ggsave(filename = paste("s2n_plots", unique(points_sf$motusTagID), unique(points_sf$alpha_code),"fall.png"), plot = plot)
+ggsave(filename = paste("s2n_plots", unique(plot_data$motusTagID), unique(plot_data$alpha_code),unique(plot_data$season), ".png", sep = "_"), plot = plot)
 
 plot_data %>% 
   group_by(recvDeployName) %>% 
@@ -116,7 +136,10 @@ sora_range <- st_read("Data/sora_range_2023/sora_range_2023.gpkg") %>%
 vira_range <- st_read("Data/virrai_range_2023/virrai_range_2023.gpkg") %>% 
   filter(season == c("breeding", "nonbreeding"))
 
+cols <- c("Summer" = "indianred", "Winter" = "skyblue2", "Spring" = "darkseagreen", "Fall" = "goldenrod1", "breeding" = "#F8766D", "nonbreeding" = "#619CFF")
 vira <- unique(tag$motusTagID)
+
+
 
 for (i in vira) {
 
@@ -130,8 +153,8 @@ tag_map <- tag %>%
   arrange(motusTagID, time_cst) %>% 
   mutate(
     motusTagID = as.factor(motusTagID),
-    is_first = if_else(row_number() == 1, TRUE, FALSE)) %>% 
-  filter(season == "Fall") 
+    is_first = if_else(row_number() == 1, TRUE, FALSE)) #%>% 
+  #filter(season == "Fall") 
 
 if (nrow(tag_map == 0)) {
 
@@ -140,30 +163,30 @@ points_sf <- st_as_sf(tag_map, coords = c("recvDeployLon", "recvDeployLat"), crs
 bbox_points <- st_bbox(points_sf)
 
 map <- ggplot() +
-  geom_sf(data = states,fill="gray98",color = NA)+
-  geom_sf(data = lakes, colour = NA, fill = "gray80")+
+  geom_sf(data = states,fill="gray80",color = NA)+
+  geom_sf(data = lakes, colour = NA, fill = "gray60")+
   #geom_sf(data = usmap, fill = NA)+
   geom_sf(data = states,fill=NA)+
-  geom_sf(data = vira_range, aes(fill = season), alpha = 0.5, color = NA) +
+  #geom_sf(data = vira_range, aes(fill = season), alpha = 0.5, color = NA) +
   #geom_sf(data = points_sf, aes(color = s2n))+
   geom_path(
     data = points_sf,
     aes(x = recvDeployLon, y = recvDeployLat, 
         group = interaction(motusTagID, SeasonYear)
-        #,color = motusTagID
+        ,color = season
         ),
-    linewidth = .5,linetype = 5
+    linewidth = .5,linetype = 1
   ) +
   
   # Detection points
   geom_point(
     data = points_sf,
     aes(x = recvDeployLon, y = recvDeployLat,
-        group = motusTagID, #colour = as.factor(SeasonYear)
+        group = motusTagID, fill = as.factor(season)
         ),
     shape = 21,
-    size = 2,
-    fill = "gray95"
+    size = 2#,
+    #fill = "gray95"
   ) +
   
   geom_point(
@@ -173,6 +196,8 @@ map <- ggplot() +
     shape = 24,   # triangle up
     size = 3,
     fill = "gray95")+
+  scale_fill_manual(values = cols) +
+  scale_color_manual(values = cols) +
   
   # Tag deployment point
   geom_point(
@@ -191,14 +216,10 @@ map <- ggplot() +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "gray80"),
+    panel.background = element_rect(fill = "gray60"),
     legend.position = "none"
   )
 
-map
-
-ggsave(filename = paste("Imgs/fall_vira/Track_map", unique(points_sf$motusTagID), unique(points_sf$alpha_code),"fall.png", sep = "_"), plot = map,create.dir = T)
+ggsave(filename = paste("Imgs/all_seasons_sora_filtered/Track_map_filtered", unique(points_sf$motusTagID), unique(points_sf$alpha_code),"all.png", sep = "_"), plot = map,create.dir = T)
 }
 }
-ggsave(filename = paste("tracks_SORA_fall.png", sep = "_"), plot = map)
-
